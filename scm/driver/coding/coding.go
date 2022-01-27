@@ -83,7 +83,7 @@ func NewWithToken(uri string, token string) (*scm.Client, error) {
 	// client.Issues = &issueService{client}
 	// client.Milestones = &milestoneService{client}
 	client.Organizations = &organizationService{client}
-	// client.PullRequests = &pullService{&issueService{client}}
+	client.PullRequests = &pullService{client}
 	client.Repositories = &repositoryService{client}
 	// client.Reviews = &reviewService{client}
 	// client.Releases = &releaseService{client}
