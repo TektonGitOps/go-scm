@@ -1,0 +1,19 @@
+{
+    "Response": {
+      "RequestId": "367bdaa8-e4c7-a070-ecf6-00fea8e6fab9",
+      "User": {
+        "Id": 150258,
+        "Status": 1,
+        "Email": "test@coding.net",
+        "GlobalKey": "EHRIORBbfF",
+        "Avatar": "https://coding-net-production-static-ci.codehub.cn/WM-TEXT-AVATAR-nfutKljCRlKcSLDTOmrv.jpg",
+        "Name": "张三",
+        "NamePinYin": "zhangsan",
+        "Phone": "13800138000",
+        "PhoneValidation": 1,
+        "EmailValidation": 1,
+        "PhoneRegionCode": "+86",
+        "TeamId": 102882
+      }
+    }
+  }

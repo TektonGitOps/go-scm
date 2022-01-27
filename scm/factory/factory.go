@@ -12,6 +12,7 @@ import (
 
 	"github.com/jenkins-x/go-scm/scm"
 	"github.com/jenkins-x/go-scm/scm/driver/bitbucket"
+	"github.com/jenkins-x/go-scm/scm/driver/coding"
 	"github.com/jenkins-x/go-scm/scm/driver/fake"
 	"github.com/jenkins-x/go-scm/scm/driver/gitea"
 	"github.com/jenkins-x/go-scm/scm/driver/github"
@@ -125,6 +126,8 @@ func newClient(driver, serverURL string, authOptions *AuthOptions, opts ...Clien
 			return nil, ErrMissingGitServerURL
 		}
 		client, err = stash.New(serverURL)
+	case "coding":
+		client, err = coding.NewWithToken(serverURL, oauthToken)
 	default:
 		return nil, fmt.Errorf("Unsupported $GIT_KIND value: %s", driver)
 	}
@@ -170,6 +173,8 @@ func newClient(driver, serverURL string, authOptions *AuthOptions, opts ...Clien
 					Password: oauthToken,
 				},
 			}
+			return client, nil
+		case "coding":
 			return client, nil
 		default:
 			ts := oauth2.StaticTokenSource(
