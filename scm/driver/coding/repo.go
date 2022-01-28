@@ -7,6 +7,7 @@ package coding
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -306,10 +307,10 @@ func (s *repositoryService) listProjectRepository(ctx context.Context, project s
 
 	scmRep := convertRepositoryList(out.Response.DepotData.Depots)
 
-	for _, v := range scmRep {
-		v.FullName = fmt.Sprintf("%s/%s", project, v.Name)
-		v.Namespace = project
-	}
+	// for _, v := range scmRep {
+	// 	v.FullName = fmt.Sprintf("%s/%s", project, v.Name)
+	// 	v.Namespace = project
+	// }
 
 	return scmRep, err
 }
@@ -675,11 +676,20 @@ func convertRepository(from *repositoryItem) *scm.Repository {
 	// 	namespace = strings.Split(from.Namespace.FullPath, "/")[0]
 	// 	name = strings.Split(from.Namespace.FullPath, "/")[1] + "/" + from.Path
 	// }
+	url, _ := url.Parse(from.HttpsUrl)
+	arrays := strings.Split(url.Path, "/")
+
+	arrays[len(arrays)-1] = strings.TrimSuffix(arrays[len(arrays)-1], ".git")
+
+	ns := arrays[0]
+	name := strings.Join(arrays[1:], "/")
+	fullName := strings.Join(arrays, "/")
+
 	to := &scm.Repository{
-		ID: strconv.Itoa(from.Id),
-		//	Namespace: from.ProjectId,
-		Name: from.Name,
-		//	FullName:  from.PathNamespace,
+		ID:        strconv.Itoa(from.Id),
+		Name:      name,
+		FullName:  fullName,
+		Namespace: ns,
 		//	Branch:    from.DefaultBranch,
 		Private:  true,
 		Clone:    from.HttpsUrl,

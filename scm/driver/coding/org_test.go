@@ -20,14 +20,14 @@ func TestOrgList(t *testing.T) {
 	// 	Type("application/json").
 	// 	File("testdata/user.json")
 
-	client := NewDefaultWithToken("5ecc128b6f0f551a0969f663a8d52cc51f63ce9f")
+	client := NewDefaultWithToken("")
 	got, res, err := client.Organizations.List(context.Background(), scm.ListOptions{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	org, res, err := client.Organizations.ListOrgMembers(context.Background(), "tw-test", scm.ListOptions{})
+	org, res, err := client.Organizations.Find(context.Background(), "tw-test")
 
 	t.Log(org)
 

@@ -149,7 +149,7 @@ func (s *pullService) ListLabels(ctx context.Context, repo string, number int, o
 	// }
 
 	// return mr.Labels, nil, nil
-	return nil, nil, scm.ErrNotSupported
+	return nil, nil, nil
 }
 
 func (s *pullService) ListEvents(ctx context.Context, repo string, index int, opts scm.ListOptions) ([]*scm.ListedIssueEvent, *scm.Response, error) {
@@ -161,11 +161,11 @@ func (s *pullService) ListEvents(ctx context.Context, repo string, index int, op
 }
 
 func (s *pullService) AddLabel(ctx context.Context, repo string, number int, label string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+	return nil, nil
 }
 
 func (s *pullService) DeleteLabel(ctx context.Context, repo string, number int, label string) (*scm.Response, error) {
-	return nil, scm.ErrNotSupported
+	return nil, nil
 }
 
 // func (s *pullService) setLabels(ctx context.Context, repo string, number int, labelsStr string, operation string) (*scm.Response, error) {

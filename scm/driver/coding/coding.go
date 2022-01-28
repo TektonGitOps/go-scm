@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/jenkins-x/go-scm/scm"
@@ -66,9 +67,14 @@ func NewWithToken(uri string, token string) (*scm.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	// if !strings.HasSuffix(base.Path, "/") {
-	// 	base.Path = base.Path + "/"
-	// }
+
+	if !strings.HasSuffix(base.Path, "open-api") && !strings.HasSuffix(base.Path, "open-api/") {
+		if !strings.HasSuffix(base.Path, "/") {
+			base.Path = base.Path + "/"
+		}
+		base.Path = base.Path + "open-api"
+	}
+
 	client := &wrapper{Client: new(scm.Client)}
 	client.token = token
 
@@ -88,7 +94,7 @@ func NewWithToken(uri string, token string) (*scm.Client, error) {
 	// client.Reviews = &reviewService{client}
 	// client.Releases = &releaseService{client}
 	client.Users = &userService{client}
-	// client.Webhooks = &webhookService{client}
+	client.Webhooks = &webhookService{client}
 	return client.Client, nil
 }
 
