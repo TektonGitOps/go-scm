@@ -31,20 +31,20 @@ func (s *webhookService) Parse(req *http.Request, fn scm.SecretFunc) (scm.Webhoo
 
 	var hook scm.Webhook
 	event := req.Header.Get("X-Coding-Service-Hook-Event")
-	// hookId := req.Header.Get("X-Coding-Service-Hook-Id")
+	hookId := req.Header.Get("X-Coding-Service-Hook-Id")
 	// hookAction := req.Header.Get("X-Coding-Service-Hook-Action")
 	// delivery := req.Header.Get("X-Coding-Delivery")
 
 	switch event {
 	case "GIT_PUSHED":
-		hook, err = parsePushHook(data)
+		hook, err = parsePushHook(data, hookId)
 	case "Issue Hook":
 		return nil, scm.UnknownWebhook{Event: event}
 	case "GIT_MR_CREATED":
 	case "GIT_MR_UPDATED":
 	case "GIT_MR_MERGED":
 	case "GIT_MR_CLOSED":
-		hook, err = parsePullRequestHook(data, event)
+		hook, err = parsePullRequestHook(data, event, hookId)
 	default:
 		return nil, scm.UnknownWebhook{Event: event}
 	}
@@ -69,24 +69,30 @@ func (s *webhookService) Parse(req *http.Request, fn scm.SecretFunc) (scm.Webhoo
 	return hook, nil
 }
 
-func parsePushHook(data []byte) (scm.Webhook, error) {
+func parsePushHook(data []byte, hookId string) (scm.Webhook, error) {
 	src := new(pushHook)
 	err := json.Unmarshal(data, src)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertPushHook(src), nil
+	hook := convertPushHook(src)
+	hook.GUID = hookId
+
+	return hook, nil
 }
 
-func parsePullRequestHook(data []byte, action string) (scm.Webhook, error) {
+func parsePullRequestHook(data []byte, action string, hookId string) (scm.Webhook, error) {
 	src := new(pullRequestHook)
 	err := json.Unmarshal(data, src)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertPullRequestHook(src, action), nil
+	hook := convertPullRequestHook(src, action)
+	hook.GUID = hookId
+
+	return hook, nil
 
 }
 
