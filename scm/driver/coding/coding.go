@@ -167,6 +167,40 @@ func toSCMResponse(r *gitea.Response) *scm.Response {
 	return res
 }
 
+func getInfoFromGitUrl(gitUrl string) (string, string, string, string, error) {
+	urlParts, err := url.Parse(gitUrl)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	urlParts.Path = strings.TrimSuffix(urlParts.Path, ".git")
+	urlParts.Path = strings.TrimSuffix(urlParts.Path, "/")
+	urlParts.Path = strings.TrimPrefix(urlParts.Path, "/")
+
+	names := strings.Split(urlParts.Path, "/")
+
+	owner := ""
+	project := ""
+	name := ""
+	fullName := urlParts.Path
+	if len(names) == 3 {
+		owner = names[0]
+		project = names[1]
+		name = scm.Join(project, names[2])
+	} else if len(names) == 2 {
+		owner = names[0]
+		project = names[0]
+		name = scm.Join(project, names[2])
+	} else if len(names) == 1 {
+		owner = names[0]
+		project = names[0]
+		name = names[0]
+	} else {
+		return "", "", "", "", errors.New("invalid names")
+	}
+	return owner, project, name, fullName, nil
+}
+
 // func toGiteaListOptions(in scm.ListOptions) gitea.ListOptions {
 // 	return gitea.ListOptions{
 // 		Page:     in.Page,

@@ -7,7 +7,6 @@ package coding
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -232,17 +231,25 @@ type getProjectRepositoryResponse struct {
 
 func (s *repositoryService) Create(ctx context.Context, input *scm.RepositoryInput) (*scm.Repository, *scm.Response, error) {
 
-	namespace, _, err := s.client.Organizations.Find(ctx, input.Namespace)
+	project := input.Namespace
+	name := input.Name
+	names := strings.Split(input.Name, "/")
+	if len(names) == 2 {
+		project = names[0]
+		name = names[1]
+	}
+
+	namespace, _, err := s.client.Organizations.Find(ctx, project)
 	if err != nil {
 		return nil, nil, err
 	}
 	if namespace == nil {
-		return nil, nil, fmt.Errorf("no namespace found for %s", input.Namespace)
+		return nil, nil, fmt.Errorf("no namespace found for %s", project)
 	}
 	in := new(createRepositoryRequest)
 	in.ProjectId = namespace.ID
 	in.Description = input.Description
-	in.DepotName = input.Name
+	in.DepotName = name
 	in.Action = "CreateGitDepot"
 
 	out := new(createRepositoryResponse)
@@ -256,9 +263,6 @@ func (s *repositoryService) Create(ctx context.Context, input *scm.RepositoryInp
 	if err != nil {
 		return nil, res, err
 	}
-
-	scmRep.FullName = fmt.Sprintf("%s/%s", input.Namespace, scmRep.Name)
-	scmRep.Namespace = input.Namespace
 
 	return scmRep, res, err
 }
@@ -459,6 +463,11 @@ func (s *repositoryService) ListLabels(ctx context.Context, repo string, opts sc
 
 func (s *repositoryService) Find(ctx context.Context, repo string) (*scm.Repository, *scm.Response, error) {
 	names := strings.Split(repo, "/")
+	// remove username
+	if len(names) == 3 {
+		names = names[1:]
+	}
+
 	if len(names) != 2 {
 		return nil, nil, errors.New("invalid repo name, must orgname/reponame ")
 	}
@@ -468,9 +477,13 @@ func (s *repositoryService) Find(ctx context.Context, repo string) (*scm.Reposit
 		return nil, nil, err
 	}
 
+	fn := strings.Join(names, "/")
+
 	//find
 	for _, v := range orgList {
-		if v != nil && v.Namespace == names[0] && v.Name == names[1] {
+		if v != nil && v.Name == fn {
+			v.FullName = repo
+
 			return v, nil, nil
 		}
 	}
@@ -517,7 +530,9 @@ func (s *repositoryService) ListHooks(ctx context.Context, repo string, opts scm
 	// out := []*hook{}
 	// res, err := s.client.do(ctx, "GET", path, nil, &out)
 	// return convertHookList(out), res, err
-	return nil, nil, scm.ErrNotSupported
+	return []*scm.Hook{}, &scm.Response{
+		Status: 200,
+	}, nil
 }
 
 func (s *repositoryService) ListStatus(ctx context.Context, repo, ref string, opts scm.ListOptions) ([]*scm.Status, *scm.Response, error) {
@@ -570,7 +585,7 @@ func (s *repositoryService) CreateHook(ctx context.Context, repo string, input *
 	// out := new(hook)
 	// res, err := s.client.do(ctx, "POST", path, nil, out)
 	// return convertHook(out), res, err
-	return nil, nil, scm.ErrNotSupported
+	return nil, nil, nil
 }
 
 func (s *repositoryService) UpdateHook(ctx context.Context, repo string, input *scm.HookInput) (*scm.Hook, *scm.Response, error) {
@@ -669,27 +684,14 @@ func convertRepositoryList(from []*repositoryItem) []*scm.Repository {
 // helper function to convert from the gogs repository structure
 // to the common repository structure.
 func convertRepository(from *repositoryItem) *scm.Repository {
-	// namespace := from.Namespace.FullPath
-	// name := from.Path
-	// // Nested repositories can have / in their name (sub-repo + repo name)
-	// if strings.Contains(from.Namespace.FullPath, "/") {
-	// 	namespace = strings.Split(from.Namespace.FullPath, "/")[0]
-	// 	name = strings.Split(from.Namespace.FullPath, "/")[1] + "/" + from.Path
-	// }
-	url, _ := url.Parse(from.HttpsUrl)
-	arrays := strings.Split(url.Path, "/")
 
-	arrays[len(arrays)-1] = strings.TrimSuffix(arrays[len(arrays)-1], ".git")
-
-	ns := arrays[0]
-	name := strings.Join(arrays[1:], "/")
-	fullName := strings.Join(arrays, "/")
+	owner, _, name, fullName, _ := getInfoFromGitUrl(from.HttpsUrl)
 
 	to := &scm.Repository{
 		ID:        strconv.Itoa(from.Id),
 		Name:      name,
 		FullName:  fullName,
-		Namespace: ns,
+		Namespace: owner,
 		//	Branch:    from.DefaultBranch,
 		Private:  true,
 		Clone:    from.HttpsUrl,
